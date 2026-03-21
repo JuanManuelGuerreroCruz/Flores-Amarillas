@@ -331,33 +331,48 @@ function buildBlooms() {
       // Evita flores sueltas arriba en los extremos
       if (y > 0.76 && Math.abs(x) > halfW * 0.90) continue;
 
-      pushBloom(x, y, 0.24, 0.33, 0.88);
+      pushBloom(x, y, 0.20, 0.34, 0.88);
     }
 
     // Contorno suave por fila
-    pushBloom(-halfW, y, 0.26, 0.36, 0.80, 'sunflower');
-    pushBloom( halfW, y, 0.26, 0.36, 0.80, 'sunflower');
+    pushBloom(-halfW, y, 0.22, 0.37, 0.80, 'sunflower');
+    pushBloom( halfW, y, 0.22, 0.37, 0.80, 'sunflower');
 
     // Refuerzo ligero de los hombros, pero sin saturar
     if (y > 0.58) {
-      pushBloom(-halfW * 0.78, y, 0.24, 0.32, 0.78);
-      pushBloom( halfW * 0.78, y, 0.24, 0.32, 0.78);
+      pushBloom(-halfW * 0.78, y, 0.20, 0.33, 0.78);
+      pushBloom( halfW * 0.78, y, 0.20, 0.33, 0.78);
     }
   }
 
   // Refuerzos de lóbulos, contenidos y simétricos
   const lobeAnchors = [
-    [-0.68, 0.74], [-0.50, 0.82], [-0.30, 0.85], [-0.14, 0.80],
-    [ 0.14, 0.80], [ 0.30, 0.85], [ 0.50, 0.82], [ 0.68, 0.74],
+    [-0.68, 0.72], [-0.50, 0.79], [-0.30, 0.80], [-0.14, 0.77],
+    [ 0.14, 0.77], [ 0.30, 0.80], [ 0.50, 0.79], [ 0.68, 0.72],
     [-0.82, 0.48], [0.82, 0.48]
   ];
-  lobeAnchors.forEach(([x, y]) => pushBloom(x, y, 0.25, 0.34, 0.76, 'sunflower'));
+  lobeAnchors.forEach(([x, y]) => pushBloom(x, y, 0.21, 0.35, 0.76, 'sunflower'));
 
   // Punta inferior más fina
   const tipAnchors = [
     [0.00, -1.00], [-0.05, -0.92], [0.05, -0.92], [-0.10, -0.84], [0.10, -0.84]
   ];
-  tipAnchors.forEach(([x, y]) => pushBloom(x, y, 0.24, 0.32, 0.82, 'sunflower'));
+  tipAnchors.forEach(([x, y]) => pushBloom(x, y, 0.20, 0.33, 0.82, 'sunflower'));
+
+  // Empareja la parte superior para evitar flores sueltas y que se vea más uniforme
+  function topCapFor(x) {
+    const ax = Math.abs(x);
+    const lobe = 0.77 + 0.05 * Math.exp(-Math.pow((ax - 0.34) / 0.18, 2));
+    const notch = 0.07 * Math.exp(-Math.pow(ax / 0.12, 2));
+    return lobe - notch;
+  }
+
+  for (const bloom of blooms) {
+    const cap = topCapFor(bloom.x);
+    if (bloom.y > cap) {
+      bloom.y = cap - rand(0.000, 0.008);
+    }
+  }
 
   blooms.sort((a, b) => a.delay - b.delay);
 }
@@ -371,14 +386,14 @@ function buildFallers() {
     fallers.push({
       refX: base.x,
       refY: base.y,
-      size: rand(0.14, 0.22),
+      size: rand(0.20, 0.30),
       rotation: rand(0, Math.PI * 2),
       spin: rand(-0.010, 0.010),
       swing: rand(8, 18),
       drift: rand(-8, 8),
       startDelay: rand(0.2, 2.2),
       cycle: rand(5.8, 8.2),
-      alpha: rand(0.42, 0.70),
+      alpha: rand(0.48, 0.78),
       variant: Math.random() < 0.78 ? 'mini' : 'sunflower'
     });
   }
@@ -473,7 +488,8 @@ function updateLayout() {
   const treeW = trunkImg.width * scale;
   const treeH = trunkImg.height * scale;
   const treeX = (w - treeW) / 2;
-  const treeY = h - treeH - 8;
+  const lift = w < 600 ? 96 : 54;
+  const treeY = h - treeH - lift;
 
   layout = {
     treeX,
@@ -550,7 +566,7 @@ function drawBlooms(progress) {
 
     const p = local >= 1 ? 1 : local;
     const alpha = easeOutCubic(p);
-    const scale = (0.12 + easeOutBack(p) * 0.88) * bloom.size;
+    const scale = (0.12 + easeOutBack(p) * 0.88) * bloom.size * (0.94 + (Math.sin((bloom.x * 9.7) + (bloom.y * 6.3)) + 1) * 0.05);
 
     drawBloomSprite(
       bloom.variant === 'sunflower' ? sprites.sunflower : sprites.mini,
