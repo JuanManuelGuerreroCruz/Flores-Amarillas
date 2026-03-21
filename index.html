@@ -27,13 +27,17 @@
   }
 
   .text {
-    width: min(720px, 86vw);
-    margin: 20px auto 0;
-    font-size: clamp(16px, 2vw, 20px);
-    line-height: 1.45;
+    width: min(760px, 88vw);
+    margin: 46px auto 0;
+    font-size: clamp(18px, 2.15vw, 23px);
+    line-height: 1.48;
     min-height: 120px;
     text-align: left;
     z-index: 2;
+    font-family: "Segoe Print", "Comic Sans MS", "Trebuchet MS", sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0.2px;
   }
 
   .canvas-wrap {
@@ -49,10 +53,7 @@
   }
 
   .counter {
-    text-align: center;
-    font-size: clamp(14px, 1.8vw, 18px);
-    padding: 0 10px 12px;
-    z-index: 2;
+    display: none;
   }
 
   #startScreen {
@@ -62,17 +63,156 @@
     align-items: center;
     justify-content: center;
     background: var(--bg);
-    font-size: clamp(22px, 3vw, 30px);
     z-index: 10;
     cursor: pointer;
     text-align: center;
     padding: 20px;
+    overflow: hidden;
+  }
+
+  .start-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    transform-origin: center;
+    transition: opacity 0.35s ease;
+  }
+
+  .start-flower-wrap {
+    position: relative;
+    width: 138px;
+    height: 138px;
+    flex: 0 0 auto;
+    will-change: transform, left, top, opacity;
+  }
+
+  .start-flower {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, #2c1209 0 18px, #4a2010 18px 28px, transparent 29px),
+      radial-gradient(circle at center, rgba(255,255,255,0.22) 0 44px, transparent 45px);
+    filter: drop-shadow(0 2px 3px rgba(105, 66, 20, 0.12));
+  }
+
+  .start-flower::before {
+    content: "";
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+    background:
+      conic-gradient(
+        from 0deg,
+        #eeb832 0deg 9deg, transparent 9deg 16deg,
+        #f7cf55 16deg 25deg, transparent 25deg 32deg,
+        #efbb36 32deg 41deg, transparent 41deg 48deg,
+        #ffd967 48deg 57deg, transparent 57deg 64deg,
+        #efbb36 64deg 73deg, transparent 73deg 80deg,
+        #f7cf55 80deg 89deg, transparent 89deg 96deg,
+        #eeb832 96deg 105deg, transparent 105deg 112deg,
+        #ffd967 112deg 121deg, transparent 121deg 128deg,
+        #efbb36 128deg 137deg, transparent 137deg 144deg,
+        #f7cf55 144deg 153deg, transparent 153deg 160deg,
+        #eeb832 160deg 169deg, transparent 169deg 176deg,
+        #ffd967 176deg 185deg, transparent 185deg 192deg,
+        #efbb36 192deg 201deg, transparent 201deg 208deg,
+        #f7cf55 208deg 217deg, transparent 217deg 224deg,
+        #eeb832 224deg 233deg, transparent 233deg 240deg,
+        #ffd967 240deg 249deg, transparent 249deg 256deg,
+        #efbb36 256deg 265deg, transparent 265deg 272deg,
+        #f7cf55 272deg 281deg, transparent 281deg 288deg,
+        #eeb832 288deg 297deg, transparent 297deg 304deg,
+        #ffd967 304deg 313deg, transparent 313deg 320deg,
+        #efbb36 320deg 329deg, transparent 329deg 336deg,
+        #f7cf55 336deg 345deg, transparent 345deg 360deg
+      );
+    -webkit-mask: radial-gradient(circle at center, transparent 0 40px, #000 41px);
+            mask: radial-gradient(circle at center, transparent 0 40px, #000 41px);
+  }
+
+  .start-flower::after {
+    content: "";
+    position: absolute;
+    inset: 26px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 38% 38%, rgba(255, 214, 118, 0.22) 0 8px, transparent 9px),
+      radial-gradient(circle at center, #2d1008 0 22px, #4e2311 22px 34px, #2f140b 34px 40px, transparent 41px);
+  }
+
+  .start-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    color: #6b422b;
+    will-change: opacity, transform;
+  }
+
+  .start-title {
+    font-family: "Segoe Print", "Comic Sans MS", "Trebuchet MS", sans-serif;
+    font-size: clamp(34px, 5.4vw, 58px);
+    line-height: 1;
+    font-weight: 400;
+    letter-spacing: 0.4px;
+  }
+
+  .start-line {
+    width: min(260px, 30vw);
+    height: 3px;
+    border-radius: 999px;
+    background: #7c4d2e;
+    transform-origin: left center;
+  }
+
+  #startScreen.ready .start-flower-wrap {
+    animation: flowerHover 1.8s ease-in-out infinite;
+  }
+
+  #startScreen.launch .start-copy {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+
+  #startScreen.launch .start-line {
+    transform: scaleX(0.7);
+    transition: transform 0.25s ease;
+  }
+
+  .start-flower-wrap.fly {
+    position: fixed;
+    z-index: 12;
+    transition:
+      left 1.05s cubic-bezier(.22,.78,.18,1),
+      top 1.05s cubic-bezier(.22,.78,.18,1),
+      transform 1.05s cubic-bezier(.2,.75,.18,1),
+      opacity 0.35s ease;
+  }
+
+  @keyframes flowerHover {
+    0%,100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-6px) rotate(-2deg); }
   }
 </style>
 </head>
 <body>
 
-<div id="startScreen">🌻 Flores para ti 💛 (toca aquí)</div>
+<div id="startScreen">
+  <div class="start-card" id="startCard">
+    <div class="start-flower-wrap" id="startFlowerWrap">
+      <div class="start-flower" id="startFlower">
+        <div class="sf-core"></div>
+      </div>
+    </div>
+    <div class="start-copy" id="startCopy">
+      <div class="start-title">Toca aquí</div>
+      <div class="start-line"></div>
+    </div>
+  </div>
+</div>
 
 <div class="app">
   <div class="text" id="message"></div>
@@ -85,7 +225,12 @@
 <script>
 const CONFIG = {
   startDate: '2025-02-14T00:00:00',
-  message: `Flores amarillas para el amor de mi vida:\n\nGracias por existir, por iluminar mis días y por hacer florecer mi corazón.\n\nTe quiero muchísimo.`,
+  message: `Holaa Te hice este detalle un poquito diferente al resto jaja 
+tus flores amarillas, bueno arbolito jeje en mi mente se veia bonito jajaj 
+espero que te guste
+Te quiero muchisimo 
+
+PD: puse esa cancion por que fue la que no puso spotify jajaja`, 
   trunkDuration: 1400,
   bloomDuration: 2400
 };
@@ -226,14 +371,14 @@ function buildFallers() {
     fallers.push({
       refX: base.x,
       refY: base.y,
-      size: rand(0.11, 0.18),
+      size: rand(0.14, 0.22),
       rotation: rand(0, Math.PI * 2),
       spin: rand(-0.010, 0.010),
       swing: rand(8, 18),
       drift: rand(-8, 8),
       startDelay: rand(0.2, 2.2),
       cycle: rand(5.8, 8.2),
-      alpha: rand(0.35, 0.62),
+      alpha: rand(0.42, 0.70),
       variant: Math.random() < 0.78 ? 'mini' : 'sunflower'
     });
   }
@@ -492,19 +637,8 @@ function typeText(text, el) {
 }
 
 function updateCounter() {
-  const start = new Date(CONFIG.startDate);
-  const now = new Date();
-  const diff = now - start;
-
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor(diff / 3600000) % 24;
-  const minutes = Math.floor(diff / 60000) % 60;
-  const seconds = Math.floor(diff / 1000) % 60;
-
-  document.getElementById('counter').innerHTML =
-    `Mi amor por ti comenzó hace...<br>${days} días ${hours} horas ${minutes} minutos ${seconds} segundos`;
+  // contador desactivado
 }
-setInterval(updateCounter, 1000);
 
 buildBlooms();
 buildFallers();
@@ -512,18 +646,21 @@ createSprites();
 
 trunkImg.onload = () => {
   resize();
+  document.getElementById('startScreen').classList.add('ready');
 };
 
 document.getElementById('startScreen').onclick = () => {
-  document.getElementById('startScreen').style.display = 'none';
-
+  const startScreen = document.getElementById('startScreen');
+  const startFlowerWrap = document.getElementById('startFlowerWrap');
   const music = document.getElementById('bgMusic');
+
+  startScreen.classList.remove('ready');
+  startScreen.classList.add('launch');
+
   if (music) {
     music.volume = 0.28;
     music.muted = false;
-    try {
-      music.load();
-    } catch (e) {}
+    try { music.load(); } catch (e) {}
     const playPromise = music.play();
     if (playPromise && typeof playPromise.catch === 'function') {
       playPromise.catch((err) => {
@@ -532,15 +669,49 @@ document.getElementById('startScreen').onclick = () => {
     }
   }
 
-  typeText(CONFIG.message, document.getElementById('message'));
-  updateCounter();
+  const flowerRect = startFlowerWrap.getBoundingClientRect();
+  const canvasRect = c.getBoundingClientRect();
 
-  if (animationFrameId) cancelAnimationFrame(animationFrameId);
-  animationStartTime = null;
-  trunkProgress = 0;
-  bloomProgress = 0;
-  drawScene(0);
-  animationFrameId = requestAnimationFrame(animateScene);
+  const startLeft = flowerRect.left;
+  const startTop = flowerRect.top;
+
+  const targetLeft = canvasRect.left + (canvasRect.width / 2) - (flowerRect.width / 2);
+  const targetTop = canvasRect.top + (canvasRect.height * 0.89) - (flowerRect.height / 2);
+
+  startFlowerWrap.classList.add('fly');
+  startFlowerWrap.style.left = startLeft + 'px';
+  startFlowerWrap.style.top = startTop + 'px';
+  startFlowerWrap.style.transform = 'translateY(-20px) scale(1.07)';
+
+  // pequeño brinco
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      startFlowerWrap.style.transform = 'translateY(0px) scale(0.98) rotate(-4deg)';
+    }, 110);
+
+    // caída hacia el inicio del tronco
+    setTimeout(() => {
+      startFlowerWrap.style.left = targetLeft + 'px';
+      startFlowerWrap.style.top = targetTop + 'px';
+      startFlowerWrap.style.transform = 'translateY(0px) scale(0.42) rotate(10deg)';
+    }, 220);
+  });
+
+  setTimeout(() => {
+    startFlowerWrap.style.opacity = '0';
+  }, 980);
+
+  setTimeout(() => {
+    startScreen.style.display = 'none';
+    typeText(CONFIG.message, document.getElementById('message'));
+
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    animationStartTime = null;
+    trunkProgress = 0;
+    bloomProgress = 0;
+    drawScene(0);
+    animationFrameId = requestAnimationFrame(animateScene);
+  }, 1080);
 };
 </script>
 
