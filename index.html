@@ -131,71 +131,88 @@ function heartPoint(t, r, jitter = 0.35) {
 function buildBlooms() {
   blooms = [];
 
-  // CONTORNO del corazón: más redondo y más alto, como la imagen de referencia
-  for (let t = 0; t < Math.PI * 2; t += 0.055) {
-    for (const ring of [1.00, 0.93]) {
-      const x = Math.pow(Math.sin(t), 3) * ring;
-      const y = ((13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 17) * ring;
+  function pushBloom(x, y, sizeMin, sizeMax, delayFactor = 1, forceVariant = null) {
+    const vertical = 1 - ((y + 1.02) / 1.88);
+    const delay = clamp(vertical * delayFactor + Math.abs(x) * 0.028 + rand(-0.006, 0.010), 0, 1);
 
-      const rise = clamp((1 - ((y + 1.05) / 2.05)) * 0.86 + Math.abs(x) * 0.06 + rand(-0.015, 0.02), 0, 1);
-
-      blooms.push({
-        x: x + rand(-0.015, 0.015),
-        y: y + rand(-0.015, 0.015),
-        size: ring === 1 ? rand(0.40, 0.54) : rand(0.36, 0.48),
-        delay: rise,
-        rotation: rand(0, Math.PI * 2),
-        variant: Math.random() < 0.88 ? 'sunflower' : 'mini',
-        px: 0,
-        py: 0
-      });
-    }
-  }
-
-  // RELLENO interior usando una rejilla dentro de la ecuación clásica del corazón
-  const cols = 23;
-  const rows = 21;
-
-  for (let iy = 0; iy < rows; iy++) {
-    for (let ix = 0; ix < cols; ix++) {
-      const u = -1.10 + ((ix + rand(-0.20, 0.20)) / (cols - 1)) * 2.20;
-      const v =  1.10 - ((iy + rand(-0.20, 0.20)) / (rows - 1)) * 2.20;
-
-      const eq = Math.pow(u * u + v * v - 1, 3) - (u * u * v * v * v);
-      if (eq > 0.03) continue;
-
-      const rise = clamp((1 - ((v + 1.10) / 2.20)) * 0.90 + Math.abs(u) * 0.05 + rand(-0.015, 0.025), 0, 1);
-
-      blooms.push({
-        x: u * 0.96,
-        y: v * 0.98,
-        size: rand(0.32, 0.44),
-        delay: rise,
-        rotation: rand(0, Math.PI * 2),
-        variant: Math.random() < 0.84 ? 'sunflower' : 'mini',
-        px: 0,
-        py: 0
-      });
-    }
-  }
-
-  // Refuerzo suave en la punta inferior para que cierre bien sobre el tronco
-  const tipAnchors = [
-    [0.00, -1.02], [-0.12, -0.92], [0.12, -0.92], [-0.22, -0.82], [0.22, -0.82]
-  ];
-
-  tipAnchors.forEach(([x, y]) => {
     blooms.push({
-      x: x + rand(-0.01, 0.01),
-      y: y + rand(-0.01, 0.01),
-      size: rand(0.34, 0.46),
-      delay: clamp((1 - ((y + 1.10) / 2.20)) * 0.86, 0, 1),
+      x: x + rand(-0.006, 0.006),
+      y: y + rand(-0.006, 0.006),
+      size: rand(sizeMin, sizeMax),
+      delay,
       rotation: rand(0, Math.PI * 2),
-      variant: 'sunflower',
+      variant: forceVariant || (Math.random() < 0.84 ? 'sunflower' : 'mini'),
       px: 0,
       py: 0
     });
-  });
+  }
+
+  function lerpProfile(profile, y) {
+    for (let i = 0; i < profile.length - 1; i++) {
+      const a = profile[i];
+      const b = profile[i + 1];
+      if (y <= a[0] && y >= b[0]) {
+        const t = (y - b[0]) / (a[0] - b[0]);
+        return b[1] + (a[1] - b[1]) * t;
+      }
+    }
+    return profile[profile.length - 1][1];
+  }
+
+  // Perfil manual más limpio para que sí se lean los dos lóbulos del corazón
+  const widthProfile = [
+    [ 0.86, 0.30], [ 0.78, 0.46], [ 0.70, 0.62], [ 0.62, 0.74],
+    [ 0.54, 0.83], [ 0.46, 0.89], [ 0.38, 0.93], [ 0.30, 0.95],
+    [ 0.22, 0.95], [ 0.14, 0.92], [ 0.06, 0.86], [-0.02, 0.79],
+    [-0.10, 0.71], [-0.18, 0.63], [-0.26, 0.56], [-0.34, 0.49],
+    [-0.42, 0.42], [-0.50, 0.36], [-0.58, 0.30], [-0.66, 0.24],
+    [-0.74, 0.18], [-0.82, 0.12], [-0.90, 0.08], [-0.98, 0.04]
+  ];
+
+  // Hendidura superior más clara para marcar los lóbulos
+  const notchProfile = [
+    [ 0.86, 0.18], [ 0.78, 0.14], [ 0.70, 0.10], [ 0.62, 0.06],
+    [ 0.54, 0.03], [ 0.46, 0.01], [-1.00, 0.00]
+  ];
+
+  for (let y = 0.86; y >= -0.98; y -= 0.082) {
+    const halfW = lerpProfile(widthProfile, y);
+    const notch = lerpProfile(notchProfile, y);
+    const step = y > 0.48 ? 0.118 : (y < -0.48 ? 0.098 : 0.108);
+
+    for (let x = -halfW; x <= halfW; x += step) {
+      if (notch > 0 && Math.abs(x) < notch) continue;
+
+      // Evita flores sueltas arriba en los extremos
+      if (y > 0.76 && Math.abs(x) > halfW * 0.90) continue;
+
+      pushBloom(x, y, 0.24, 0.33, 0.88);
+    }
+
+    // Contorno suave por fila
+    pushBloom(-halfW, y, 0.26, 0.36, 0.80, 'sunflower');
+    pushBloom( halfW, y, 0.26, 0.36, 0.80, 'sunflower');
+
+    // Refuerzo ligero de los hombros, pero sin saturar
+    if (y > 0.58) {
+      pushBloom(-halfW * 0.78, y, 0.24, 0.32, 0.78);
+      pushBloom( halfW * 0.78, y, 0.24, 0.32, 0.78);
+    }
+  }
+
+  // Refuerzos de lóbulos, contenidos y simétricos
+  const lobeAnchors = [
+    [-0.68, 0.74], [-0.50, 0.82], [-0.30, 0.85], [-0.14, 0.80],
+    [ 0.14, 0.80], [ 0.30, 0.85], [ 0.50, 0.82], [ 0.68, 0.74],
+    [-0.82, 0.48], [0.82, 0.48]
+  ];
+  lobeAnchors.forEach(([x, y]) => pushBloom(x, y, 0.25, 0.34, 0.76, 'sunflower'));
+
+  // Punta inferior más fina
+  const tipAnchors = [
+    [0.00, -1.00], [-0.05, -0.92], [0.05, -0.92], [-0.10, -0.84], [0.10, -0.84]
+  ];
+  tipAnchors.forEach(([x, y]) => pushBloom(x, y, 0.24, 0.32, 0.82, 'sunflower'));
 
   blooms.sort((a, b) => a.delay - b.delay);
 }
@@ -319,27 +336,32 @@ function updateLayout() {
     treeW,
     treeH,
     heartCX: treeX + treeW * 0.5,
-    heartCY: treeY + treeH * 0.255,
-    heartW: treeW * 0.98,
-    heartH: treeH * 0.82
+    heartCY: treeY + treeH * 0.285,
+    heartW: treeW * 1.16,
+    heartH: treeH * 0.92
   };
 
   for (const bloom of blooms) {
     let px = layout.heartCX + bloom.x * (layout.heartW / 2);
     let py = layout.heartCY - bloom.y * (layout.heartH / 2);
 
-    // abre y sube los lóbulos superiores
-    if (bloom.y > 0.32) {
-      const t = Math.min(1, (bloom.y - 0.32) / 0.68);
-      px += Math.sign(bloom.x || 1) * layout.heartW * 0.035 * t;
-      py -= layout.heartH * 0.035 * t;
+    // marca la hendidura del centro arriba
+    if (Math.abs(bloom.x) < 0.16 && bloom.y > 0.68) {
+      const notch = Math.min(1, (bloom.y - 0.68) / 0.18);
+      py += layout.heartH * 0.060 * notch;
     }
 
-    // afina la punta inferior para que el corazón cierre mejor
+    // baja flores altas de los lóbulos para que no sobresalgan
+    if (Math.abs(bloom.x) > 0.18 && bloom.y > 0.74) {
+      const drop = Math.min(1, (bloom.y - 0.74) / 0.14);
+      py += layout.heartH * 0.080 * drop;
+    }
+
+    // afina la punta inferior
     if (bloom.y < -0.70) {
-      const t = Math.min(1, (-0.70 - bloom.y) / 0.40);
-      py += layout.heartH * 0.045 * t;
-      px *= 1 - 0.015 * t;
+      const t = Math.min(1, (-0.70 - bloom.y) / 0.30);
+      px = layout.heartCX + (px - layout.heartCX) * (1 - 0.12 * t);
+      py += layout.heartH * 0.022 * t;
     }
 
     bloom.px = px;
@@ -494,6 +516,22 @@ trunkImg.onload = () => {
 
 document.getElementById('startScreen').onclick = () => {
   document.getElementById('startScreen').style.display = 'none';
+
+  const music = document.getElementById('bgMusic');
+  if (music) {
+    music.volume = 0.28;
+    music.muted = false;
+    try {
+      music.load();
+    } catch (e) {}
+    const playPromise = music.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch((err) => {
+        console.log('No se pudo reproducir el audio automáticamente:', err);
+      });
+    }
+  }
+
   typeText(CONFIG.message, document.getElementById('message'));
   updateCounter();
 
@@ -506,5 +544,9 @@ document.getElementById('startScreen').onclick = () => {
 };
 </script>
 
+
+<audio id="bgMusic" preload="auto" loop>
+  <source src="Somebody To Love.mp3" type="audio/mpeg">
+</audio>
 </body>
 </html>
