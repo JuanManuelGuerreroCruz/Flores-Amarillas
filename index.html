@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pastel de cumpleaños</title>
+<style>
+  :root {
+    --bg1: #fff2f7;
+    --bg2: #ffe4ef;
+    --text: #6f2b58;
+    --accent: #ff73a8;
+    --accent2: #7ad8ff;
+    --line: #d85b91;
+    --success: #4caf7d;
+    --warning: #ffb347;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--text);
+    background: radial-gradient(circle at top, var(--bg1) 0%, var(--bg2) 70%, #ffd7e7 100%);
+    overflow: hidden;
+  }
+
+  .app {
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    position: relative;
+  }
+
+  .text {
+    width: min(840px, 90vw);
+    margin: 26px auto 0;
+    font-size: clamp(18px, 2vw, 24px);
+    line-height: 1.55;
+    min-height: 108px;
+    text-align: center;
+    z-index: 2;
+    font-family: "Segoe Print", "Comic Sans MS", "Trebuchet MS", sans-serif;
+    letter-spacing: 0.2px;
+    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+  }
+
+  .controls {
+    width: min(920px, 92vw);
+    margin: 8px auto 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    z-index: 3;
+    min-height: 52px;
+  }
+
+  .hint-pill,
+  .status-pill,
+  .action-btn {
+    border-radius: 999px;
+    padding: 11px 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 22px rgba(147, 74, 108, 0.12);
+    border: 1px solid rgba(255,255,255,.65);
+  }
+
+  .hint-pill,
+  .status-pill {
+    background: rgba(255,255,255,.72);
+    font-size: 14px;
+  }
+
+  .status-pill { display: none; }
+  .status-pill.show { display: inline-flex; }
+  .status-pill.ok { color: #1d7f52; }
+  .status-pill.warn { color: #b16b05; }
+
+  .action-btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #ff86b6, #ffb86c);
+    color: white;
+    font-weight: 700;
+    letter-spacing: .2px;
+    transition: transform .18s ease, box-shadow .18s ease, opacity .2s ease;
+  }
+
+  .action-btn:hover { transform: translateY(-1px); }
+  .action-btn:active { transform: translateY(1px) scale(.99); }
+  .action-btn[disabled] { opacity: .55; cursor: not-allowed; }
+
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    min-height: 0;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  #startScreen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at top, #fff7fb 0%, #ffe5f0 70%, #ffd7e8 100%);
+    z-index: 20;
+    cursor: pointer;
+    padding: 20px;
+    overflow: hidden;
+    transition: opacity .6s ease, visibility .6s ease;
+  }
+
+  #startScreen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .start-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 26px 28px 30px;
+    border-radius: 30px;
+    background: rgba(255,255,255,.52);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 16px 42px rgba(206, 91, 144, 0.18);
+    border: 2px solid rgba(255,255,255,0.6);
+    max-width: 560px;
+  }
+
+  .start-badge {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 48px;
+    background: radial-gradient(circle at 35% 30%, #fff8fd 0%, #ffd7e8 45%, #ffb5d0 100%);
+    border: 4px solid rgba(255,255,255,.7);
+    animation: floatCake 2.7s ease-in-out infinite;
+    box-shadow: 0 12px 24px rgba(128, 76, 97, 0.16);
+  }
+
+  .start-title {
+    text-align: center;
+    font-family: "Segoe Print", "Comic Sans MS", "Trebuchet MS", sans-serif;
+    font-size: clamp(30px, 4.8vw, 52px);
+    line-height: 1.05;
+    color: #b33d75;
+  }
+
+  .start-sub {
+    font-size: clamp(14px, 2vw, 18px);
+    text-align: center;
+    color: #8b4e71;
+  }
+
+  .start-line {
+    width: min(280px, 58vw);
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ff8db9, #ffca6d, #7ad8ff);
+  }
+
+  .confetti-piece {
+    position: absolute;
+    inset: auto;
+    width: 10px;
+    height: 20px;
+    border-radius: 4px;
+    opacity: .65;
+    animation: confettiBob 4s ease-in-out infinite;
+  }
+
+  .cp1 { top: 12%; left: 10%; background: #ff8db9; transform: rotate(25deg); }
+  .cp2 { top: 18%; right: 12%; background: #7ad8ff; transform: rotate(-18deg); animation-delay: -.9s; }
+  .cp3 { bottom: 15%; left: 12%; background: #ffd56e; transform: rotate(15deg); animation-delay: -.4s; }
+  .cp4 { bottom: 18%; right: 10%; background: #a98bff; transform: rotate(-25deg); animation-delay: -1.3s; }
+
+  @keyframes floatCake {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes confettiBob {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(12px) rotate(18deg); }
+  }
+
+  @media (max-width: 640px) {
+    .text { min-height: 126px; margin-top: 18px; }
+    .controls { gap: 8px; }
+    .hint-pill, .status-pill, .action-btn { font-size: 13px; padding: 10px 14px; }
+  }
+</style>
+</head>
+<body>
+<div id="startScreen">
+  <div class="confetti-piece cp1"></div>
+  <div class="confetti-piece cp2"></div>
+  <div class="confetti-piece cp3"></div>
+  <div class="confetti-piece cp4"></div>
+
+  <div class="start-card">
+    <div class="start-badge">🎉</div>
+    <div class="start-title">🎂 Toca para celebrar 🎉</div>
+    <div class="start-line"></div>
+    <div class="start-sub">Al tocar, aparecerá el pastel. Luego podrá soplarle a las velitas desde el micrófono.</div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="text" id="message"></div>
+  <div class="controls">
+    <button class="action-btn" id="micBtn" type="button">🎤 Activar micrófono para soplar</button>
+    <div class="hint-pill">Sopla fuerte unos instantes para apagar las velas ✨</div>
+    <div class="status-pill" id="statusPill"></div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="c"></canvas>
+  </div>
+</div>
+
+<script>
+const CONFIG = {
+  message: `🎂 Feliz cumpleaños 🎉\n\nHoy quise hacer este detalle un poquito más especial para ti.\n\nDeseo que este día esté lleno de alegría, abrazos bonitos, sonrisas, regalitos y momentos felices. ✨💖\n\nAhora sopla las velitas y pide tu deseo.`,
+  candleCount: 5,
+  micThreshold: 48,
+  blowFramesNeeded: 10,
+  flameOutStepMs: 260
+};
+
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const startScreen = document.getElementById('startScreen');
+const messageEl = document.getElementById('message');
+const micBtn = document.getElementById('micBtn');
+const statusPill = document.getElementById('statusPill');
+
+let animationId = null;
+let confetti = [];
+let started = false;
+let audioReady = false;
+let allCandlesOutAt = 0;
+let burstUntil = 0;
+
+let audioContext = null;
+let analyser = null;
+let micStream = null;
+let micSource = null;
+let volumeData = null;
+let blowCounter = 0;
+let micEnabled = false;
+let micPermissionDenied = false;
+
+const candles = Array.from({ length: CONFIG.candleCount }, (_, i) => ({
+  lit: true,
+  extinguishing: false,
+  glow: Math.random() * Math.PI * 2,
+  smokeSeed: Math.random() * 1000,
+  offAt: 0,
+  index: i
+}));
+
+function resizeCanvas() {
+  const ratio = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  c.width = Math.floor(rect.width * ratio);
+  c.height = Math.floor(rect.height * ratio);
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+}
+
+function typeText(text, el, speed = 24) {
+  el.textContent = '';
+  let i = 0;
+  function step() {
+    if (i <= text.length) {
+      el.textContent = text.slice(0, i);
+      i++;
+      setTimeout(step, speed);
+    }
+  }
+  step();
+}
+
+function setStatus(text, kind = 'ok') {
+  statusPill.textContent = text;
+  statusPill.className = `status-pill show ${kind}`;
+}
+
+function initConfetti() {
+  const colors = ['#ff8db9', '#7ad8ff', '#ffd56e', '#b89dff', '#7be3a9'];
+  confetti = Array.from({ length: 90 }, () => ({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    size: 6 + Math.random() * 10,
+    speed: 0.8 + Math.random() * 2.2,
+    drift: -0.8 + Math.random() * 1.6,
+    rot: Math.random() * Math.PI,
+    rotSpeed: -0.05 + Math.random() * 0.10,
+    color: colors[Math.floor(Math.random() * colors.length)]
+  }));
+}
+
+function drawConfetti(time) {
+  const burstBoost = time < burstUntil ? 1.9 : 1;
+  for (const p of confetti) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.size / 2, -p.size, p.size, p.size * 1.8);
+    ctx.restore();
+
+    p.y += p.speed * burstBoost;
+    p.x += p.drift * burstBoost;
+    p.rot += p.rotSpeed * burstBoost;
+
+    if (p.y > window.innerHeight + 24) {
+      p.y = -20;
+      p.x = Math.random() * window.innerWidth;
+    }
+    if (p.x < -30) p.x = window.innerWidth + 10;
+    if (p.x > window.innerWidth + 30) p.x = -10;
+  }
+}
+
+function candlePositions(scale) {
+  return {
+    xs: [-82, -38, 0, 42, 86].map(v => v * scale),
+    ys: [-40, -56, -72, -52, -38].map(v => v * scale)
+  };
+}
+
+function drawFlame(x, y, scale, t, strength = 1) {
+  const sway = Math.sin(t * 0.008 + x * 0.01) * 2.5 * strength;
+  const pulse = 1 + Math.sin(t * 0.014 + x * 0.02) * 0.08 * strength;
+  ctx.save();
+  ctx.translate(x + sway, y);
+  ctx.scale(scale * pulse, scale / pulse);
+
+  ctx.beginPath();
+  ctx.moveTo(0, -26);
+  ctx.bezierCurveTo(12, -10, 14, 12, 0, 22);
+  ctx.bezierCurveTo(-14, 12, -12, -10, 0, -26);
+  ctx.closePath();
+  ctx.fillStyle = '#ff9016';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(0, -16);
+  ctx.bezierCurveTo(7, -7, 8, 7, 0, 14);
+  ctx.bezierCurveTo(-8, 7, -7, -7, 0, -16);
+  ctx.closePath();
+  ctx.fillStyle = '#fff3a8';
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawSmoke(x, y, scale, time, seed) {
+  for (let i = 0; i < 3; i++) {
+    const drift = Math.sin(time * 0.002 + seed + i) * 8 * scale;
+    const lift = ((time * 0.05 + i * 18 + seed * 10) % 70) * scale;
+    const alpha = Math.max(0, 0.22 - i * 0.05);
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(160, 150, 170, ${alpha})`;
+    ctx.ellipse(x + drift, y - lift, (10 - i * 2) * scale, (6 - i) * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawCake(x, y, scale, time) {
+  const sway = Math.sin(time * 0.0025) * 3;
+  const cx = x;
+  const cy = y + sway;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  const plateW = 360 * scale;
+  const plateH = 52 * scale;
+  const bottomW = 280 * scale;
+  const bottomH = 92 * scale;
+  const topW = 245 * scale;
+  const topH = 78 * scale;
+
+  ctx.shadowColor = 'rgba(107, 56, 86, 0.16)';
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = '#b8e8ff';
+  ctx.beginPath();
+  ctx.ellipse(0, 125 * scale, plateW / 2, plateH / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#ffe08a';
+  ctx.beginPath();
+  ctx.roundRect(-bottomW / 2, 25 * scale, bottomW, bottomH, 28 * scale);
+  ctx.fill();
+
+  ctx.fillStyle = '#ff7faa';
+  ctx.beginPath();
+  ctx.roundRect(-bottomW / 2 + 6 * scale, 62 * scale, bottomW - 12 * scale, 22 * scale, 14 * scale);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffe9a8';
+  ctx.beginPath();
+  ctx.roundRect(-topW / 2, -28 * scale, topW, topH, 26 * scale);
+  ctx.fill();
+
+  ctx.fillStyle = '#ff9dc1';
+  ctx.beginPath();
+  ctx.moveTo(-topW / 2 + 12 * scale, -35 * scale);
+  ctx.quadraticCurveTo(0, -62 * scale, topW / 2 - 12 * scale, -35 * scale);
+  ctx.lineTo(topW / 2, 10 * scale);
+  for (let i = 0; i < 7; i++) {
+    const px = topW / 2 - i * (topW / 6);
+    const py = 10 * scale + (i % 2 === 0 ? 18 * scale : 0);
+    ctx.quadraticCurveTo(px - 14 * scale, py + 18 * scale, px - topW / 12, 10 * scale);
+  }
+  ctx.lineTo(-topW / 2, 10 * scale);
+  for (let i = 0; i < 8; i++) {
+    const px = -topW / 2 + i * (topW / 7);
+    const py = 10 * scale + (i % 2 === 0 ? 14 * scale : 2 * scale);
+    ctx.quadraticCurveTo(px + 10 * scale, py + 12 * scale, px + topW / 14, 10 * scale);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#ff8eb6';
+  ctx.beginPath();
+  ctx.moveTo(-bottomW / 2 + 10 * scale, 32 * scale);
+  for (let i = 0; i < 10; i++) {
+    const px = -bottomW / 2 + i * (bottomW / 9);
+    const py = 32 * scale + (i % 2 === 0 ? 14 * scale : 2 * scale);
+    ctx.quadraticCurveTo(px + 12 * scale, py + 10 * scale, px + bottomW / 10, 32 * scale);
+  }
+  ctx.lineTo(bottomW / 2 - 10 * scale, 32 * scale);
+  ctx.lineTo(bottomW / 2 - 10 * scale, 48 * scale);
+  ctx.lineTo(-bottomW / 2 + 10 * scale, 48 * scale);
+  ctx.closePath();
+  ctx.fill();
+
+  const { xs: candleXs, ys: candleYs } = candlePositions(scale);
+
+  candleXs.forEach((cx2, i) => {
+    const cy2 = candleYs[i];
+    const candle = candles[i];
+
+    ctx.fillStyle = '#dd90d3';
+    ctx.beginPath();
+    ctx.roundRect(cx2 - 10 * scale, cy2 - 6 * scale, 20 * scale, 52 * scale, 10 * scale);
+    ctx.fill();
+    ctx.strokeStyle = '#8a4b87';
+    ctx.lineWidth = 2 * scale;
+    ctx.stroke();
+
+    ctx.strokeStyle = '#fff2a6';
+    ctx.beginPath();
+    ctx.moveTo(cx2, cy2 - 6 * scale);
+    ctx.lineTo(cx2, cy2 - 18 * scale);
+    ctx.stroke();
+
+    if (candle.lit) {
+      drawFlame(cx2, cy2 - 28 * scale, 0.72 * scale, time, 1);
+    } else {
+      drawSmoke(cx2, cy2 - 18 * scale, scale * 0.9, time, candle.smokeSeed);
+    }
+  });
+
+  const sprinkles = [
+    [-70, -22, '#7ad8ff'], [-40, -12, '#ffd56e'], [-12, -26, '#ff7faa'],
+    [24, -18, '#7be3a9'], [54, -28, '#b89dff'], [82, -12, '#ffd56e']
+  ];
+  sprinkles.forEach(([sx, sy, color]) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4 * scale;
+    ctx.beginPath();
+    ctx.moveTo(sx * scale - 5 * scale, sy * scale);
+    ctx.lineTo(sx * scale + 5 * scale, sy * scale + 2 * scale);
+    ctx.stroke();
+  });
+
+  ctx.restore();
+}
+
+function drawCakeScene(time) {
+  const w = c.clientWidth;
+  const h = c.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  const bg = ctx.createLinearGradient(0, 0, 0, h);
+  bg.addColorStop(0, 'rgba(255, 245, 249, 0)');
+  bg.addColorStop(1, 'rgba(255, 224, 237, 0.5)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  drawConfetti(time);
+
+  const scale = Math.min(w / 520, h / 420, 1.05);
+  drawCake(w / 2, h * 0.54, scale, time);
+
+  if (allCandlesOutAt && time - allCandlesOutAt < 4000) {
+    const alpha = 1 - Math.min((time - allCandlesOutAt) / 4000, 1);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#9e4d77';
+    ctx.font = `700 ${Math.max(26, Math.min(48, w * 0.045))}px "Segoe Print", "Comic Sans MS", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('✨ Deseo pedido ✨', w / 2, Math.max(84, h * 0.16));
+    ctx.restore();
+  }
+}
+
+function getVolumeLevel() {
+  if (!analyser || !volumeData) return 0;
+  analyser.getByteFrequencyData(volumeData);
+  let sum = 0;
+  for (let i = 0; i < volumeData.length; i++) sum += volumeData[i];
+  return sum / volumeData.length;
+}
+
+function extinguishNextCandle() {
+  const next = candles.find(c => c.lit);
+  if (!next) return false;
+  next.lit = false;
+  next.offAt = performance.now();
+  if (candles.every(c => !c.lit)) {
+    allCandlesOutAt = performance.now();
+    burstUntil = performance.now() + 1600;
+    setStatus('🎉 ¡Se apagaron todas las velitas!', 'ok');
+    micBtn.disabled = true;
+    stopMic();
+  }
+  return true;
+}
+
+function checkBlow() {
+  if (!micEnabled) return;
+  const level = getVolumeLevel();
+  if (level > CONFIG.micThreshold) {
+    blowCounter += 1;
+    setStatus('💨 Soplando... sigue así', 'ok');
+  } else {
+    blowCounter = Math.max(0, blowCounter - 1);
+    if (candles.some(c => c.lit)) {
+      setStatus('🎤 Micrófono activo. Sopla más fuerte para apagar las velas.', 'ok');
+    }
+  }
+
+  if (blowCounter >= CONFIG.blowFramesNeeded) {
+    blowCounter = 0;
+    const turnedOff = extinguishNextCandle();
+    if (turnedOff && candles.some(c => c.lit)) {
+      setStatus('🕯️ Se apagó una velita. Sigue soplando.', 'ok');
+    }
+  }
+}
+
+function animate(time) {
+  checkBlow();
+  drawCakeScene(time);
+  animationId = requestAnimationFrame(animate);
+}
+
+async function enableMic() {
+  if (micEnabled) return;
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Micrófono no compatible');
+    }
+
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: false,
+        autoGainControl: false
+      }
+    });
+
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === 'suspended') await audioContext.resume();
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.35;
+    volumeData = new Uint8Array(analyser.frequencyBinCount);
+    micSource = audioContext.createMediaStreamSource(micStream);
+    micSource.connect(analyser);
+
+    micEnabled = true;
+    audioReady = true;
+    setStatus('🎤 Micrófono activado. Ahora sí, sopla las velitas.', 'ok');
+    micBtn.textContent = '🎤 Micrófono activado';
+    micBtn.disabled = true;
+  } catch (err) {
+    micPermissionDenied = true;
+    setStatus('⚠️ No se pudo activar el micrófono. Revisa el permiso del navegador.', 'warn');
+  }
+}
+
+function stopMic() {
+  micEnabled = false;
+  if (micSource) {
+    try { micSource.disconnect(); } catch (e) {}
+    micSource = null;
+  }
+  if (micStream) {
+    micStream.getTracks().forEach(track => track.stop());
+    micStream = null;
+  }
+  if (audioContext) {
+    try { audioContext.close(); } catch (e) {}
+    audioContext = null;
+  }
+  analyser = null;
+  volumeData = null;
+}
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  initConfetti();
+});
+
+const bgMusic = new Audio('cumpleanos.mp3');
+bgMusic.loop = true;
+bgMusic.preload = 'auto';
+
+startScreen.addEventListener('click', async () => {
+  if (started) return;
+  started = true;
+  typeText(CONFIG.message, messageEl);
+  resizeCanvas();
+  initConfetti();
+  animate(performance.now());
+  startScreen.classList.add('hidden');
+  setStatus('✨ Pastel listo. Activa el micrófono para soplar las velitas.', 'ok');
+  try { await bgMusic.play(); } catch (e) {}
+});
+
+micBtn.addEventListener('click', async () => {
+  await enableMic();
+});
+
+window.addEventListener('beforeunload', stopMic);
+resizeCanvas();
+</script>
+</body>
+</html>
